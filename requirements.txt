@@ -1,0 +1,6 @@
+openshock
+websockets
+faster-whisper
+sounddevice
+numpy
+requests

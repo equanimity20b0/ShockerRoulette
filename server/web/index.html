@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shocker Roulette - Spectator Dashboard</title>
+    <!-- Import Inter Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette matched to the reference screenshot (dark charcoal theme) */
+            --bg-dark: #0d0e12;
+            --bg-sidebar: #13141b;
+            --bg-card: #171821;
+            --bg-input: #262835;
+            --primary: #3b82f6; /* Cyan-blue accent */
+            --primary-glow: rgba(59, 130, 246, 0.25);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.2);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #8a8d98;
+            --border: rgba(255, 255, 255, 0.04);
+            --border-hover: rgba(255, 255, 255, 0.08);
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 80%),
+                radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0) 80%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* SVG Noise Overlay to Dither Gradients & Prevent Banding */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            pointer-events: none;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            padding-left: 5px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), #a78bfa);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #93c5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .menu-section {
+            margin-bottom: 25px;
+        }
+
+        .menu-header {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 12px;
+            font-weight: 700;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-item {
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active {
+            color: #fff;
+            background-color: rgba(59, 130, 246, 0.08);
+            border-left: 3px solid var(--primary);
+            border-radius: 0 10px 10px 0;
+            padding-left: 11px;
+        }
+
+        .nav-item-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Connection Status Widget */
+        .connection-status-card {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-dot-sidebar {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .status-dot-sidebar.connected {
+            background-color: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        .status-dot-sidebar.disconnected {
+            background-color: var(--danger);
+            box-shadow: 0 0 6px var(--danger);
+        }
+
+        /* Main Content Layout */
+        .main-content {
+            margin-left: 280px;
+            padding: 40px 50px;
+            flex: 1;
+            max-width: 1300px;
+            min-height: 100vh;
+            background-color: transparent;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        /* Glassmorphism Cards */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 30px;
+        }
+
+        .card-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
+
+        /* Stakes Banner widget styling */
+        #roulette-stakes-card {
+            border: 1px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+        }
+
+        .limit-progress-bar {
+            width: 100%;
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .limit-progress-fill {
+            height: 100%;
+            border-radius: 100px;
+            background: linear-gradient(to right, var(--primary), var(--danger));
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.1, 0.8, 0.25, 1);
+        }
+
+        /* Words Tags */
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .word-tag {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .word-tag::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--danger);
+            box-shadow: 0 0 6px var(--danger);
+            display: inline-block;
+        }
+
+        .word-tag.secret {
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+        }
+
+        .word-tag.secret::before {
+            background-color: var(--primary);
+            box-shadow: 0 0 6px var(--primary);
+        }
+
+        /* Player Rows */
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .player-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .player-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .player-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        /* Forms, inputs and sliders */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input[type="text"]:hover {
+            border-color: var(--border-hover);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Dynamic Safety warning styled banner */
+        .safety-alert {
+            background: rgba(245, 158, 11, 0.03);
+            border: 1px solid rgba(245, 158, 11, 0.12);
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: #fde68a;
+            font-size: 12px;
+            line-height: 1.5;
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        /* Live log panel styling */
+        .log-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .log-row {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            gap: 15px;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .log-msg {
+            color: var(--text-main);
+        }
+
+        .table-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 30px !important;
+            font-size: 13px;
+        }
+
+        /* Grid System */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 1100px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 20px;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+            .connection-status-card {
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo-icon">🔥</div>
+            <div class="logo-text">Shocker Roulette</div>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-header">SPECTATE</div>
+            <ul class="nav-list">
+                <li class="nav-item active">
+                    <span class="nav-item-icon">📺</span> Live Feed
+                </li>
+            </ul>
+        </div>
+
+        <!-- Connection Status widget at bottom -->
+        <div class="connection-status-card">
+            <span id="server-status-dot" class="status-dot-sidebar disconnected"></span>
+            <span id="server-status-text">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div class="main-content">
+        <!-- Safety notifications banner -->
+        <div class="safety-alert" id="lobby-banner"></div>
+
+        <h1>Spectator Lobby</h1>
+
+        <!-- STAKES CARD -->
+        <div class="card" id="roulette-stakes-card">
+            <div class="card-header-row" style="margin-bottom: 12px;">
+                <div class="card-title">🔥 ROULETTE STAKES LEVEL</div>
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;" id="stakes-cap-label">
+                    Start: --% | Max: --%
+                </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 24px; padding: 4px 0; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 80px; border-right: 1px solid var(--border); padding-right: 24px;">
+                    <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Stakes</span>
+                    <span id="stakes-current-val" style="font-size: 28px; font-weight: 800; color: var(--primary); line-height: 1.1;">--%</span>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: 600;">
+                        <span>Low Risk</span>
+                        <span>Max Danger Cap</span>
+                    </div>
+                    <div class="limit-progress-bar">
+                        <div id="stakes-progress-bar" class="limit-progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BANNED WORDS CARD -->
+        <div class="card">
+            <div class="card-header-row">
+                <div class="card-title">🚨 Active Banned Words</div>
+                <span style="font-size: 11px; color: var(--text-muted);">Triggers punishments on players</span>
+            </div>
+            <div class="word-list" id="forbidden-words-list">
+                <div class="table-empty">No active forbidden words loaded.</div>
+            </div>
+        </div>
+
+        <!-- LOWER GRID -->
+        <div class="grid-2">
+            <!-- Left panel: Spectator Word Submitter & logs -->
+            <div>
+                <!-- Submitter Card -->
+                <div class="card">
+                    <div class="card-header-row">
+                        <div class="card-title">🎭 Spectator Secret Trap</div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted);">
+                        <span id="token-label">Shared Submitter Tokens: --/--</span>
+                        <span id="recharge-label">Recharging in --s</span>
+                    </div>
+                    <div class="limit-progress-bar" style="height: 6px; margin-bottom: 20px;">
+                        <div id="token-progress-bar" class="limit-progress-fill" style="background: linear-gradient(to right, var(--primary), var(--success)); box-shadow: 0 0 6px var(--primary-glow); width: 0%;"></div>
+                    </div>
+
+                    <form id="add-word-form" onsubmit="submitSpectatorWord(event)">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="new-word-input" placeholder="Type a hidden trap word..." required>
+                            <button type="submit" class="btn" id="submit-btn" style="flex-shrink: 0;">Add Word</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Event logs -->
+                <div class="card">
+                    <div class="card-header-row">
+                        <div class="card-title">Lobby Activity Feed</div>
+                    </div>
+                    <div class="log-container" id="log-feed">
+                        <div class="table-empty">Waiting for lobby events...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right panel: Connected players -->
+            <div class="card">
+                <div class="card-header-row">
+                    <div class="card-title">👥 Connected Players</div>
+                </div>
+                <div class="player-list" id="player-list-container">
+                    <div class="table-empty">Nobody online.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO NOTIFICATION -->
+    <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav" preload="auto"></audio>
+
+    <script>
+        const socketUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host;
+        let ws = null;
+        let rechargeInterval = null;
+        let rechargeSecondsLeft = 0;
+
+        function connect() {
+            const dot = document.getElementById('server-status-dot');
+            const txt = document.getElementById('server-status-text');
+
+            txt.innerText = "Connecting...";
+            dot.className = "status-dot-sidebar disconnected";
+
+            ws = new WebSocket(socketUrl);
+
+            ws.onopen = () => {
+                txt.innerText = "Connected";
+                dot.className = "status-dot-sidebar connected";
+                addLog("System", "WebSocket connection established.");
+                
+                // Register as spectator client
+                ws.send(JSON.stringify({
+                    action: "register",
+                    type: "spectator"
+                }));
+            };
+
+            ws.onclose = () => {
+                txt.innerText = "Offline";
+                dot.className = "status-dot-sidebar disconnected";
+                addLog("System", "WebSocket connection closed. Reconnecting in 3s...");
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error("Socket error: ", err);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleEvent(data);
+            };
+        }
+
+        function handleEvent(data) {
+            // 1. Process welcome and general status syncs
+            if (data.event === "welcome" || data.event === "words_updated" || data.event === "player_joined" || data.event === "player_left" || data.event === "punish" || data.event === "roulette" || data.event === "spectator_status") {
+                // Update players
+                if (data.players) {
+                    updatePlayerList(data.players);
+                }
+                
+                // Update forbidden words list
+                if (data.forbidden_words) {
+                    updateWordsList(data.forbidden_words, data.secret_hashes || []);
+                }
+                
+                // Update stakes
+                if (data.roulette_start_intensity !== undefined) {
+                    updateStakes(data.roulette_start_intensity, data.roulette_max_intensity, data.roulette_current_intensity);
+                }
+                
+                // Update spectator tokens
+                if (data.spectator_tokens !== undefined) {
+                    updateTokens(data.spectator_tokens, data.spectator_max_tokens, data.recharge_seconds_left);
+                }
+            }
+
+            // 2. Banner and Specific event messaging
+            if (data.message) {
+                showBanner(data.message);
+                addLog("Lobby", data.message);
+            }
+
+            if (data.event === "punish") {
+                addLog("Punish", `${data.speaker} triggered shock on word '${data.word}'! Power: ${data.intensity}%`);
+            } else if (data.event === "roulette") {
+                addLog("Roulette", `Roulette spin sequence initiated by speaker '${data.speaker}'!`);
+            } else if (data.event === "player_joined") {
+                addLog("Server", `Player '${data.name}' joined the game lobby.`);
+            } else if (data.event === "player_left") {
+                addLog("Server", `Player '${data.name}' left the game lobby.`);
+            } else if (data.event === "error") {
+                alert("Error from server: " + data.message);
+            }
+        }
+
+        function updatePlayerList(players) {
+            const container = document.getElementById('player-list-container');
+            if (players.length === 0) {
+                container.innerHTML = '<div class="table-empty">Nobody online.</div>';
+                return;
+            }
+            container.innerHTML = players.map(p => `
+                <div class="player-row">
+                    <div class="player-left">
+                        <span class="player-dot"></span>
+                        <span>${p}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateWordsList(forbidden, secretHashes) {
+            const list = document.getElementById('forbidden-words-list');
+            let html = '';
+            
+            if (forbidden && forbidden.length > 0) {
+                html += forbidden.map(w => `<span class="word-tag">${w}</span>`).join('');
+            }
+            if (secretHashes && secretHashes.length > 0) {
+                html += secretHashes.map(() => `<span class="word-tag secret">?</span>`).join('');
+            }
+            
+            if (html === '') {
+                list.innerHTML = '<div class="table-empty">No active forbidden words loaded.</div>';
+            } else {
+                list.innerHTML = html;
+            }
+        }
+
+        function updateStakes(start, max, current) {
+            const pct = max > start ? Math.min(100, Math.max(0, ((current - start) / (max - start)) * 100)) : 0;
+            document.getElementById('stakes-current-val').innerText = `${current}%`;
+            document.getElementById('stakes-progress-bar').style.width = `${pct}%`;
+            document.getElementById('stakes-cap-label').innerText = `Start: ${start}% | Max: ${max}%`;
+        }
+
+        function updateTokens(tokens, max, rechargeLeft) {
+            document.getElementById('token-label').innerText = `Shared Submitter Tokens: ${tokens}/${max}`;
+            const pct = (tokens / max) * 100;
+            document.getElementById('token-progress-bar').style.width = `${pct}%`;
+
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = (tokens < 1);
+
+            rechargeSecondsLeft = rechargeLeft;
+            const rechargeLabel = document.getElementById('recharge-label');
+            
+            if (tokens >= max) {
+                rechargeLabel.innerText = "Pool Full";
+                if (rechargeInterval) {
+                    clearInterval(rechargeInterval);
+                    rechargeInterval = null;
+                }
+            } else {
+                rechargeLabel.innerText = `Recharging token in ${rechargeSecondsLeft}s`;
+                if (!rechargeInterval) {
+                    rechargeInterval = setInterval(tickRecharge, 1000);
+                }
+            }
+        }
+
+        function tickRecharge() {
+            if (rechargeSecondsLeft > 0) {
+                rechargeSecondsLeft--;
+                document.getElementById('recharge-label').innerText = `Recharging token in ${rechargeSecondsLeft}s`;
+            } else {
+                // Countdown ended, request update from server
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ action: "spectator_ping" }));
+                }
+            }
+        }
+
+        function submitSpectatorWord(event) {
+            event.preventDefault();
+            const input = document.getElementById('new-word-input');
+            const word = input.value.trim().toLowerCase();
+            
+            if (!word) return;
+
+            ws.send(JSON.stringify({
+                action: "add_spectator_word",
+                word: word
+            }));
+
+            input.value = '';
+            
+            // Play notification sound
+            try {
+                document.getElementById('success-sound').play();
+            } catch (e) {}
+        }
+
+        function showBanner(msg) {
+            const banner = document.getElementById('lobby-banner');
+            banner.innerText = msg;
+            banner.style.display = 'flex';
+            
+            // Auto hide banner after 8s
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 8000);
+        }
+
+        function addLog(source, msg) {
+            const feed = document.getElementById('log-feed');
+            if (feed.querySelector('.table-empty')) {
+                feed.innerHTML = '';
+            }
+
+            const tr = document.createElement('div');
+            tr.className = 'log-row';
+            const timeStr = new Date().toLocaleTimeString();
+            tr.innerHTML = `
+                <span class="log-time">[${timeStr}]</span>
+                <span class="log-msg"><strong>${source}:</strong> ${msg}</span>
+            `;
+            
+            feed.appendChild(tr);
+            feed.scrollTop = feed.scrollHeight; // auto scroll
+        }
+
+        // Init
+        connect();
+    </script>
+</body>
+</html>
