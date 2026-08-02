@@ -166,8 +166,19 @@ class ShockerClient(HardwareManager):
             self.add_log("server", f"Connecting to game server at {self.server_url}...")
             print(f"{bcolors.OKCYAN}Connecting to Shocker Roulette Server at {self.server_url}...{bcolors.ENDC}")
             
+            connect_kwargs = {}
+            import inspect
             try:
-                async with websockets.connect(self.server_url, extra_headers=extra_headers) as ws:
+                sig = inspect.signature(websockets.connect)
+                if "additional_headers" in sig.parameters:
+                    connect_kwargs["additional_headers"] = extra_headers
+                else:
+                    connect_kwargs["extra_headers"] = extra_headers
+            except Exception:
+                connect_kwargs["extra_headers"] = extra_headers
+
+            try:
+                async with websockets.connect(self.server_url, **connect_kwargs) as ws:
                     self.websocket = ws
                     
                     # Register player name and include integrity check hashes

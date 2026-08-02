@@ -4,59 +4,42 @@ A multiplayer social game that uses local speech-to-text to punish connected pla
 
 ## Project Structure
 - `/server`: Coordinates the lobby status, manages forbidden and secret word lists, handles spectator HTTP/WebSocket multiplexing on a single port (8765), and broadcasts game events.
-- `/client`: Captures microphone audio, performs local speech-to-text, serves a local Client Web UI dashboard (port 5000), and executes API commands on the player's collar under local safety limits.
+- `/server/web/js`: as of now, the client web-based side of the game... I will update with more instructions once done refactoring
 
 ---
 
 ## Setup & Dependencies
+Just need to install dependencies
 
-Install the required libraries on host and client machines:
-
+### Bare Metal
 ```bash
-pip install openshock websockets faster-whisper sounddevice numpy requests
+python pip install -r server/server_requirements.txt
 ```
 
-> [!NOTE]
-> `sounddevice` and `faster_whisper` are used on the client machines to capture audio from the microphone and transcribe it locally.
-
+### Docker
+```bash
+ docker build -t shocker-roulette-server .
+```
 ---
 
 ## How to Play
 
-### 1. Set Up the Server (The Host)
+### 1. Set Up the Server (The Host) on Bare Metal
 1. Navigate to the `server/` directory.
 2. Start the server once to generate the default configuration:
    ```bash
    python server.py
    ```
-3. Open the newly created `server/config.json` file and adjust your lobby settings:
-   - **`forbidden_words`**: List the words that players are banned from saying.
-   - **`punishment_type`**: Decide the default server punishment: `"shock"`, `"vibrate"`, or `"sound"`.
-   - **`intensity`**: Power level (1-100%). Keep this low (e.g., 5-15%).
-   - **`duration_ms`**: Punishment duration in milliseconds (e.g., `1000` = 1 second).
-4. Restart `server.py` to apply the config. Both WebSocket and HTTP services run multiplexed on port `8765`.
+
+### 1. Set Up on Docker
+1. Start up the docker image
+   ```bash
+   docker run -d -p 8765:8765 --name roulette-server shocker-roulette-server
+   ```
 
 ### 2. Connect the Clients (The Players)
-Each player runs their client application to join the lobby.
-1. Navigate to the `client/` directory.
-2. Start the client:
-   ```bash
-   python client.py
-   ```
-3. Once running, open your web browser and navigate to:
-   **`http://localhost:5000`**
-4. Under the **Settings** tab, configure your player name, server IP, API type, credentials, and safety limits.
-5. In the **Device Testing** tab, test your collar with a sound or vibration to ensure the connection works.
-6. The client will automatically sync the active forbidden word list, start transcribing your speech, and display active logs in the **Lobby Dashboard** tab.
-
-### 3. Join as a Spectator
-Anyone can join the game as a spectator without installing any files.
-1. Open a web browser and navigate to the server's IP and port:
-   **`http://<server-ip>:8765/`**
-2. Spectators can view active player names, live roulette stakes, public forbidden words, and the lobby event log.
-3. **Cooperative Trap Words**: Spectators share a pool of rechargeable tokens. You can use a token to submit a secret trap word. These words are hidden (rendered as `?` cards) from the players. If any player speaks a secret trap word:
-   - The speaker is punished immediately.
-   - The word is revealed and migrated to the public forbidden list, where it escalates the roulette stakes.
+Players can connect by going to the hosts ip addres or web url.
+From there they can setup and start playing!
 
 ---
 
